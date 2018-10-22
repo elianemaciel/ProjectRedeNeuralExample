@@ -1,10 +1,11 @@
+﻿# coding=utf-8
 
 from neuronio import Neuronio
 from conexao import Conexao
+import random
 
 taxa_aprendizagem = 0.8
 momentum = 1.0
-# BufferedReader br
 
 def calculaCamadas(camada_esquerda, camada_direita): # i e j so os tamanhos das camadas
     """
@@ -33,10 +34,20 @@ def calculaCamadas(camada_esquerda, camada_direita): # i e j so os tamanhos das 
             posEsq +=1
 
     # somatorio = 1/(1 + (float)Math.exp(-somatorio))
+    # saida = 1 / (1 + Exp(-somatorio))
     neuronio.setValor(somatorio)
     posDir +=1
     posEsq = 0
 
+
+def calcula_saida(camadas_escondidas, ):
+    # Calcule a saídas dos neurônios das camadas escondidas
+    for camada in CamadasEscondidas:
+        for neuronio in camada:
+            neuronio.UpdateSaida()
+    # Calcule a saídas dos neurônios da camada de saída
+    for neuronio in CamadaSaida:
+        neuronio.UpdateSaida()
 
 
 def calculaErro(camada_final):
@@ -90,22 +101,18 @@ def verificaResultado(camada_final, matriz_confusao):
 
     matriz_confusao[posValorCorreto][posMaior] += 1
 
-def lerLinha(linha, camada_inicial, camada_final):
+def ler_linha(linha, camada_inicial, camada_final):
     #  Leitura Arquivo
 
-    s = linha.split(",")
+    list_linha = linha.replace(" ", "").replace("\n", "").split(",")
 
-    # for (int i = 0 i < s.length - 1 i++)
-    # 	  :
-    #
-    # 			camada_inicial.get(i).setValor(Float.parseFloat(s[i].trim())/100)	# Normalizando valor para no saturar neurnios
-    #
-    # 	   for(Neuronio n:camada_final)
-    # 	  :
-    # 		   n.setValorEsperado(0)
-    #
-    # 	   #  Insere 1 na posio que identifica o valor esperado
-    # 	   camada_final.get(Integer.parseInt(s[s.length-1].trim())).setValorEsperado(1)
+    for i in range(len(list_linha)-1):
+        camada_inicial[i].set_valor(float(list_linha[i])/100)	# Normalizando valor para no saturar neurnios
+        for neuronio in camada_final:
+            neuronio.set_valor_esperado(0)
+
+        #  Insere 1 na posio que identifica o valor esperado
+        # camada_final[len(list_linha)].set_valor_esperado(1)
 
 
 
@@ -205,63 +212,64 @@ def main():
 
     for i in range(16):
         for j in range(13):
-            # peso = r.nextFloat()
+            peso = random.uniform(1.5, 1.9)
             if (peso == 0.0): # no pode ser exatamente 0
                 peso = 0.1
             elif (peso == 1.0): # nem exatamente 1
                 peso = 0.90
-            camada1.get(i).getConexoes().add(Conexao(peso))
+            camada1[i].conexoes.append(Conexao(peso))
 
     for i in range(13):
         for j in range(10):
-            peso = r.nextFloat()
+            peso = random.uniform(1.5, 1.9)
             if (peso == 0.0): # talvez testar entre 0 e 100
                 peso = 0.1
             elif (peso == 1.0):
                 peso = 0.90
-                camada2.get(i).getConexoes().add(Conexao(peso))
+                camada2[i].conexoes.append(Conexao(peso))
 
     # Fim das inicializaes
 
     # Aprendizado
     try:
-        # br = new BufferedReader(new FileReader("./pendigits.tra"))
-        linha = br.readLine()
-        cont = 0
-        while (linha != null):
 
-            lerLinha(linha,camada1, camada3)
+        file_tra = open("pendigits.tra", 'r')
+
+        linha = file_tra.readline()
+        while linha:
+            print(linha)
+
+            ler_linha(linha, camada1, camada3)
 
             calculaCamadas(camada1,camada2)
-            calculaCamadas(camada2,camada3)
+            # calculaCamadas(camada2,camada3)
+            #
+            # calculaErro(camada3)
+            # calculaErro(camada2,camada3)
+            #
+            # atualizaPeso(camada1,camada2)
+            # atualizaPeso(camada2,camada3)
+            linha = file_tra.readline()
 
-            calculaErro(camada3)
-            calculaErro(camada2,camada3)
 
-            atualizaPeso(camada1,camada2)
-            atualizaPeso(camada2,camada3)
 
-    # falta conferir se o resultado da ltima camada  o resultado esperado
-    # precisa usar todos os neurnios da camada, no s o que  igual a 1
+        # falta conferir se o resultado da ltima camada  o resultado esperado
+        # precisa usar todos os neurnios da camada, no s o que  igual a 1
 
-    # falta mensagens, tabela de acerto e iteraes sem aprendizado para usar com arq de teste
+        # falta mensagens, tabela de acerto e iteraes sem aprendizado para usar com arq de teste
 
         # print("Linha" + cont)
 
         # printaCoisas()
-        """print("Resultado Camada 3:")
-        for(Neuronio n:camada3)
-        {
-        print(n.getValor() + " " + n.getValorEsperado())
-        """
+        # """print("Resultado Camada 3:")
+        # for(Neuronio n:camada3)
+        # {
+        # print(n.getValor() + " " + n.getValorEsperado())
+        # """
 
 
-
-        cont += 1
-        linha = br.readLine()
-
-    except:
-        print("Traceback")
+    except Exception as e:
+            print('erro ao ler arquivo', e)
 
 
 

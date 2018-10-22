@@ -1,3 +1,4 @@
+﻿# coding=utf-8
 
 class Conexao:
 	peso = 0.0
