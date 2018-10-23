@@ -27,10 +27,10 @@ def calcula_saida(camada_esquerda, camada_direita):
             pos_esq = 0
     except Exception as e:
         print("Erro no calculo de saida ", e)
-   
+
 
 def calcula_erro(camada_intermediaria=None, camada_final=None, ultima_camada=False):
-    
+
     try:
         if ultima_camada:
             for neuronio in camada_final:
@@ -74,22 +74,25 @@ def ajuste_peso(camada_esquerda, camada_direita):
 
 
 def verifica_resultado(camada_final, matriz_confusao):
-    maior = 0
-    pos_maior = 0
-    cont = 0
-    pos_valor_correto = 0
-    for neuronio in camada_final:
-        if(neuronio.valor>maior):
-            maior = neuronio.valor
-            pos_maior = cont
+    try:
+        maior = 0
+        pos_maior = 0
+        pos_valor_correto = 0
+        # import ipdb; ipdb.set_trace()
+        for i, neuronio in enumerate(camada_final):
+            if(neuronio.valor>maior):
+                maior = neuronio.valor
+                pos_maior = i
 
-        if(neuronio.valor_esperado == 1):
-            pos_valor_correto = cont
+            if(neuronio.valor_esperado == 1):
+                pos_valor_correto = i
 
-        cont += 1
-    # print("Valor Correto:" + pos_valor_correto + "pos_maior:" + pos_maior)
+            # print("Valor Correto: ", pos_valor_correto, " pos_maior: ",pos_maior)
 
-    matriz_confusao[pos_valor_correto][pos_maior] += 1
+        # print(matriz_confusao[pos_valor_correto][pos_maior])
+        matriz_confusao[pos_valor_correto][pos_maior] += 1
+    except Exception as e:
+        print("Problema na função verifica resultado ", e)
     return matriz_confusao
 
 def entradas(linha, camada_inicial, camada_final):
@@ -99,14 +102,14 @@ def entradas(linha, camada_inicial, camada_final):
 
         for i in range(len(list_linha)-1):
             camada_inicial[i].set_valor(float(list_linha[i])/100)	# Normalizando valor para no saturar neurnios
-        
+
         for neuronio in camada_final:
             neuronio.set_valor_esperado(0)
 
         #  Insere 1 na posio que identifica o valor esperado
-        camada_final[len(camada_final)-1].set_valor_esperado(1)
+        camada_final[int(list_linha.pop())].set_valor_esperado(1)
     except Exception as e:
-        print("Erro ao fazer as entradas ", e)
+        print("Erro ao fazer as entradas "  , e)
 
 
 
@@ -154,7 +157,7 @@ def print_dados(matriz_confusao):
 def mostra_tabela(matriz_confusao):
     for i in range(10):
         for j in range(10):
-            print(matriz_confusao[i][j], end="")
+            print("%d\t" % matriz_confusao[i][j], end="")
 
         print()
 
@@ -187,12 +190,11 @@ def main():
     for i in range(10):
         camada3.append(Neuronio())
 
-    # Random r = new Random()
     peso = 0.0
 
     for i in range(16):
         for j in range(13):
-            peso = random.uniform(1.5, 1.9)
+            peso = random.uniform(0.0, 1.0)
             if (peso == 0.0): # no pode ser exatamente 0
                 peso = 0.1
             elif (peso == 1.0): # nem exatamente 1
@@ -201,12 +203,12 @@ def main():
 
     for i in range(13):
         for j in range(10):
-            peso = random.uniform(1.5, 1.9)
-            if (peso == 0.0): # talvez testar entre 0 e 100
+            peso = random.uniform(0.0, 1.0)
+            if peso == 0.0: # talvez testar entre 0 e 100
                 peso = 0.1
-            elif (peso == 1.0):
+            elif peso == 1.0:
                 peso = 0.90
-                camada2[i].conexoes.append(Conexao(peso))
+            camada2[i].conexoes.append(Conexao(peso))
 
     # Fim das inicializaes
 
@@ -218,10 +220,9 @@ def main():
         linha = file_tra.readline()
         cont = 0
         while linha:
-            print(linha)
             # Passo 1 – As entradas
+            # print(linha)
             entradas(linha, camada1, camada3)
-
             # Passo 2 – Saída da rede
             calcula_saida(camada1,camada2)
             calcula_saida(camada2,camada3)
@@ -233,32 +234,51 @@ def main():
             # Passo 4 – Ajuste dos Pesos
             ajuste_peso(camada1,camada2)
             ajuste_peso(camada2,camada3)
+
             linha = file_tra.readline()
+            # matriz_confusao = verifica_resultado(camada3, matriz_confusao)
             cont += 1
+        file_tra.close()
 
     except Exception as e:
-            print('erro ao ler arquivo', e)
+        print('erro ao ler arquivo', e)
+
+    mostra_tabela(matriz_confusao)
+    print()
 
     try:
-        file_tes = open("pendigits.tes", 'r')
-        linha = file_tes.readline()
-        cont = 0
-        while linha:
+        # file_tes = open("pendigits.tes", 'r')
+        # linha = file_tes.readline()
+        # cont = 0
 
-            entradas(linha, camada1, camada3)
-            
-            calcula_saida(camada_intermediaria=camada1, camada_final=camada2);
-            calcula_saida(camada_intermediaria=camada2, camada_final=camada3);
-            
-            
-            matriz_confusao = verifica_resultado(camada3, matriz_confusao);
-            
-            cont += 1
-            linha = file_tes.readline()
+        file_tra = open("pendigits.tra", 'r')
+
+        linha = file_tra.readline()
+        for cont in range(1000):
+            for i in linha:
+                # entradas(linha, camada1, camada3)
+
+                calcula_saida(camada1,camada2)
+                calcula_saida(camada2,camada3)
+
+                # Passo 3 – Cálculo do Erro
+                calcula_erro(camada_final=camada3, ultima_camada=True)
+                calcula_erro(camada_intermediaria=camada2, camada_final=camada3)
+
+                # Passo 4 – Ajuste dos Pesos
+                ajuste_peso(camada1,camada2)
+                ajuste_peso(camada2,camada3)
+
+
+                matriz_confusao = verifica_resultado(camada3, matriz_confusao)
+
+                linha = file_tra.readline()
+            print()
+            mostra_tabela(matriz_confusao)
     except Exception as e:
-        print("")
+        print("Erro Leitura arquivo pendigits.tes ", e)
 
-    mostra_tabela(matriz_confusao);
+
 
     # print_dados(matriz_confusao);
 
