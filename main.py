@@ -3,120 +3,114 @@
 from neuronio import Neuronio
 from conexao import Conexao
 import random
+from math import exp, expm1
 
 taxa_aprendizagem = 0.8
 momentum = 1.0
 
-def calculaCamadas(camada_esquerda, camada_direita): # i e j so os tamanhos das camadas
-    """
-    int tam1,tam2
-    tam1 = camada_esquerda.size()
-    tam2 = camada_direita.size()
-    for (int i = 0 i < tam1 i++)
-    {
-    for (int j = 0 j < tam2 j++)
-    {
-    camada_direita.get(j).somaValor(camada_esquerda.get(i).getConexoes(j).getPeso() * camada_esquerda.get(i).getValor())
-
-    # Clculo da Sigmoidal
-    camada_direita.get(j).setValor(1 / (1 + (float)Math.exp(-camada_direita.get(j).getValor())))
-
-
-
-    """
-    posDir = 0
-    posEsq = 0
-    somatorio = 0.00
-    for neuronio in camada_direita:
-        somatorio = 0
-        for neuronioAnterior in camada_esquerda:
-            somatorio += neuronioAnterior.getConexoes(posDir).getPeso() * neuronioAnterior.getValor()
-            posEsq +=1
-
-    # somatorio = 1/(1 + (float)Math.exp(-somatorio))
-    # saida = 1 / (1 + Exp(-somatorio))
-    neuronio.setValor(somatorio)
-    posDir +=1
-    posEsq = 0
-
-
-def calcula_saida(camadas_escondidas, ):
+def calcula_saida(camada_esquerda, camada_direita):
     # Calcule a saídas dos neurônios das camadas escondidas
-    for camada in CamadasEscondidas:
-        for neuronio in camada:
-            neuronio.UpdateSaida()
-    # Calcule a saídas dos neurônios da camada de saída
-    for neuronio in CamadaSaida:
-        neuronio.UpdateSaida()
+
+    try:
+        pos_dir = 0
+        pos_esq = 0
+        somatorio = 0.00
+        for neuronio in camada_direita:
+            somatorio = 0.00
+            for neuronio_anterior in camada_esquerda:
+                somatorio += neuronio_anterior.update_saida(pos_dir)
+                pos_esq += 1
+
+            somatorio = 1/(1 + exp(-somatorio))
+            neuronio.set_valor(somatorio)
+            pos_dir +=1
+            pos_esq = 0
+    except Exception as e:
+        print("Erro no calculo de saida ", e)
+   
+
+def calcula_erro(camada_intermediaria=None, camada_final=None, ultima_camada=False):
+    
+    try:
+        if ultima_camada:
+            for neuronio in camada_final:
+                fatorErro = neuronio.valor_esperado - neuronio.valor
+                erro = neuronio.valor * (1 - neuronio.valor) * fatorErro
+                neuronio.erro = erro
+        else:
+
+            for neuronio in camada_intermediaria:
+                i = 0
+                fatorErro = 0
+                for neuronio_dois in camada_final:
+                    fatorErro += neuronio_dois.erro * neuronio.conexoes[i].peso
+                    i += 1
+
+                erro = neuronio.valor * (1 - neuronio.valor) * fatorErro
+                neuronio.erro = erro
+    except Exception as e:
+        print("Erro no calculo de erro ", e)
 
 
-def calculaErro(camada_final):
-    for neuronio in camada_final:
-        fatorErro = neuronio.getValorEsperado() - neuronio.getValor()
-        erro = neuronio.getValor() * (1 - neuronio.getValor()) * fatorErro
-        neuronio.setErro(erro)
 
-
-
-def calculaErro(camada_intermediaria, camada_final):
-    for neuronio in camada_intermediaria:
+def ajuste_peso(camada_esquerda, camada_direita):
+    # import ipdb; ipdb.set_trace()
+    try:
         i = 0
-        fatorErro = 0
-    for neuronio_dois in camada_final:
-        fatorErro += neuronioFinal.getErro() * neuronioIntermediario.getConexoes(i).getPeso()
-        i +=1
+        for neuronio in camada_direita:
 
-    erro = neuronioIntermediario.getValor() * (1 - neuronioIntermediario.getValor()) * fatorErro
-    neuronioIntermediario.setErro(erro)
+            for neuronio_dois in camada_esquerda:
+                peso = neuronio_dois.update_pesos(
+                    pos=i,
+                    momentum=momentum,
+                    taxa_aprendizagem=taxa_aprendizagem,
+                    erro=neuronio.erro
+                )
+                neuronio_dois.conexoes[i].set_peso(peso)
 
-
-
-def atualizaPeso(camada_esquerda, camada_direita):
-    i = 0
-    for neuronio in camada_direita:
-
-        for neuronio_dois in camada_esquerda:
-            peso = neuronioAnterior.getConexoes(i).getPeso() * momentum + taxa_aprendizagem * neuronioAnterior.getValor() * neuronio.getErro()
-            neuronioAnterior.getConexoes(i).setPeso(peso)
-
-    i += 1
+            i += 1
+    except Exception as e:
+        print("Erro na função de ajuste de peso", e)
 
 
-
-def verificaResultado(camada_final, matriz_confusao):
+def verifica_resultado(camada_final, matriz_confusao):
     maior = 0
-    posMaior = 0
+    pos_maior = 0
     cont = 0
-    posValorCorreto = 0
+    pos_valor_correto = 0
     for neuronio in camada_final:
-        if(neuronio.getValor()>maior):
-            maior = neuronio.getValor()
-            posMaior = cont
+        if(neuronio.valor>maior):
+            maior = neuronio.valor
+            pos_maior = cont
 
-    if(neuronio.getValorEsperado() == 1):
-        posValorCorreto = cont
+        if(neuronio.valor_esperado == 1):
+            pos_valor_correto = cont
 
-    cont += 1
-    # print("Valor Correto:" + posValorCorreto + "posMaior:" + posMaior)
+        cont += 1
+    # print("Valor Correto:" + pos_valor_correto + "pos_maior:" + pos_maior)
 
-    matriz_confusao[posValorCorreto][posMaior] += 1
+    matriz_confusao[pos_valor_correto][pos_maior] += 1
+    return matriz_confusao
 
-def ler_linha(linha, camada_inicial, camada_final):
+def entradas(linha, camada_inicial, camada_final):
     #  Leitura Arquivo
+    try:
+        list_linha = linha.replace(" ", "").replace("\n", "").split(",")
 
-    list_linha = linha.replace(" ", "").replace("\n", "").split(",")
-
-    for i in range(len(list_linha)-1):
-        camada_inicial[i].set_valor(float(list_linha[i])/100)	# Normalizando valor para no saturar neurnios
+        for i in range(len(list_linha)-1):
+            camada_inicial[i].set_valor(float(list_linha[i])/100)	# Normalizando valor para no saturar neurnios
+        
         for neuronio in camada_final:
             neuronio.set_valor_esperado(0)
 
         #  Insere 1 na posio que identifica o valor esperado
-        # camada_final[len(list_linha)].set_valor_esperado(1)
+        camada_final[len(camada_final)-1].set_valor_esperado(1)
+    except Exception as e:
+        print("Erro ao fazer as entradas ", e)
 
 
 
-def printaDados(matriz_confusao):
+def print_dados(matriz_confusao):
     precisao = 0.00
     sensitividade = 0.00
     especificidade= 0.00
@@ -128,6 +122,12 @@ def printaDados(matriz_confusao):
     FP = 0.00
     FN = 0.00
 
+    # Acurácia = (VP+VN)/(VP+FP+VN+FN)
+    # Erro = 1-Acurácia
+    # Recall ou Sensitividade=VP/(VP+FN)
+    # Precisão=VP/(VP+FP)
+    # Especificidade=VN/(VN+FP)
+    # Fmeasure=2*(Recall*Precisão)/(Recall+Precisão)
     for i in range(10):
         FP = 0.00
         VN = 0.00
@@ -150,47 +150,27 @@ def printaDados(matriz_confusao):
     print("Especificidade: " + especificidade)
     print()
 
-def printaCoisas(camada1, camada2, camada3):
 
-
-    print("Resultado Camada 1:")
-    for n in camada1:
-        print(n.getValor() + " " + n.getValorEsperado())
-
-
-    print("Conexes Neurnio 1:")
-    primeiro = camada1[0]
-    for conexao in primeiro.getConexoes():
-        print(conexao.getPeso())
-
-
-    print("Resultado Camada 2:")
-    for n in camada2:
-        print(n.getValor() + " " + n.getValorEsperado())
-
-
-    print("Conexes Neurnio C2:")
-    primeiroC2 = camada2.get(0)
-    for conexao in primeiroC2.getConexoes():
-        print(conexao.getPeso())
-
-
-    print("Resultado Camada 3:")
-    for n in camada3:
-        print(n.getValor() + " " + n.getValorEsperado())
-
-
-def mostraTabela(matriz_confusao):
+def mostra_tabela(matriz_confusao):
     for i in range(10):
         for j in range(10):
-            print(matriz_confusao[i][j], "\t")
+            print(matriz_confusao[i][j], end="")
 
         print()
 
-    print()
 
 def main():
-    matriz_confusao = [[]]
+    matriz_confusao = [
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0]]
     camada1 = [] # ArrayList neuronio
     camada2 = []
     camada3 = []
@@ -236,67 +216,51 @@ def main():
         file_tra = open("pendigits.tra", 'r')
 
         linha = file_tra.readline()
+        cont = 0
         while linha:
             print(linha)
+            # Passo 1 – As entradas
+            entradas(linha, camada1, camada3)
 
-            ler_linha(linha, camada1, camada3)
+            # Passo 2 – Saída da rede
+            calcula_saida(camada1,camada2)
+            calcula_saida(camada2,camada3)
 
-            calculaCamadas(camada1,camada2)
-            # calculaCamadas(camada2,camada3)
-            #
-            # calculaErro(camada3)
-            # calculaErro(camada2,camada3)
-            #
-            # atualizaPeso(camada1,camada2)
-            # atualizaPeso(camada2,camada3)
+            # Passo 3 – Cálculo do Erro
+            calcula_erro(camada_final=camada3, ultima_camada=True)
+            calcula_erro(camada_intermediaria=camada2, camada_final=camada3)
+
+            # Passo 4 – Ajuste dos Pesos
+            ajuste_peso(camada1,camada2)
+            ajuste_peso(camada2,camada3)
             linha = file_tra.readline()
-
-
-
-        # falta conferir se o resultado da ltima camada  o resultado esperado
-        # precisa usar todos os neurnios da camada, no s o que  igual a 1
-
-        # falta mensagens, tabela de acerto e iteraes sem aprendizado para usar com arq de teste
-
-        # print("Linha" + cont)
-
-        # printaCoisas()
-        # """print("Resultado Camada 3:")
-        # for(Neuronio n:camada3)
-        # {
-        # print(n.getValor() + " " + n.getValorEsperado())
-        # """
-
+            cont += 1
 
     except Exception as e:
             print('erro ao ler arquivo', e)
 
+    try:
+        file_tes = open("pendigits.tes", 'r')
+        linha = file_tes.readline()
+        cont = 0
+        while linha:
 
+            entradas(linha, camada1, camada3)
+            
+            calcula_saida(camada_intermediaria=camada1, camada_final=camada2);
+            calcula_saida(camada_intermediaria=camada2, camada_final=camada3);
+            
+            
+            matriz_confusao = verifica_resultado(camada3, matriz_confusao);
+            
+            cont += 1
+            linha = file_tes.readline()
+    except Exception as e:
+        print("")
 
-    # try:
-    #     br = new BufferedReader(new FileReader("./pendigits.tes"))
-    #     String linha = br.readLine()
-    #     int cont = 0
-    #     while (linha != null):
-    #
-    #         lerLinha(linha,camada1, camada3)
-    #
-    #         calculaCamadas(camada1,camada2)
-    #         calculaCamadas(camada2,camada3)
-    #
-    #
-    #         verificaResultado(camada3, matriz_confusao)
-    #
-    #
-    #
-    #         cont++
-    #             linha = br.readLine()
-    #
-    #     catch(IOException e)
-    # e.printStackTrace()
-    #
-    # mostraTabela(matriz_confusao)
-    #
-    # printaDados(matriz_confusao)
+    mostra_tabela(matriz_confusao);
+
+    # print_dados(matriz_confusao);
+
 
 main()
