@@ -12,6 +12,10 @@ class Neuronio():
         self.valor_esperado = valor_esperado
         self.conexoes = conexoes
 
+    def __str__(self):
+        return "Valor: {valor}, valor esperado: {valor_esperado} , erro: {erro}".format(
+            valor=self.valor, valor_esperado=self.valor_esperado, erro=self.erro)
+
     def getConexoes(self, i):
 
         return conexoes[i]
@@ -33,9 +37,16 @@ class Neuronio():
     def set_valor_esperado(self, valor):
         self.valor_esperado = valor
 
+    def set_erro(self, erro):
+        self.erro = erro
+
     def update_saida(self, pos=0):
         return  self.conexoes[pos].peso * self.valor
 
     def update_pesos(self, pos=0, momentum=1.0, taxa_aprendizagem=0.8, erro=0):
-        peso = self.conexoes[pos].peso * momentum+ taxa_aprendizagem * self.valor * erro
+        peso = self.conexoes[pos].peso * momentum + taxa_aprendizagem * self.valor * erro
         return peso
+
+    def print_conexoes(self):
+        for conexao in self.conexoes:
+            print(conexao)
