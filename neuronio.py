@@ -40,9 +40,6 @@ class Neuronio():
     def set_erro(self, erro):
         self.erro = erro
 
-    def update_saida(self, pos=0):
-        return  self.conexoes[pos].peso * self.valor
-
     def update_pesos(self, pos=0, momentum=1.0, taxa_aprendizagem=0.8, erro=0):
         peso = self.conexoes[pos].peso * momentum + taxa_aprendizagem * self.valor * erro
         return peso
