@@ -4,8 +4,10 @@ from neuronio import Neuronio
 from conexao import Conexao
 import random
 from math import exp, expm1
+import random
+import numpy as np
 
-TAXA_APRENDIZAGEM = 0.2
+TAXA_APRENDIZAGEM = 0.1
 momentum = 1.0
 
 def funcao_rigida(somatorio):
@@ -15,7 +17,8 @@ def funcao_rigida(somatorio):
         return 1
 
 def funcao_sigmoidal(somatorio):
-    return 1/(1 + exp(-somatorio))
+    valor = 1.0/(1.0+np.exp(-somatorio))
+    return valor
 
 
 def calcula_saida(camada_esquerda, camada_direita, teste=False):
@@ -28,7 +31,6 @@ def calcula_saida(camada_esquerda, camada_direita, teste=False):
             for neuronio_anterior in camada_esquerda:
                 pos = camada_direita.index(neuronio)
                 somatorio += neuronio_anterior.conexoes[pos].peso * neuronio_anterior.valor
-            print(somatorio)
             somatorio = funcao_sigmoidal(somatorio)
             neuronio.set_valor(somatorio)
 
@@ -91,8 +93,8 @@ def verifica_resultado(camada_final, matriz_confusao):
             if(neuronio.valor_esperado == 1):
                 pos_valor_correto = i
 
-        # print(matriz_confusao[pos_valor_correto][pos_maior])
-        matriz_confusao[pos_valor_correto][pos_maior] += 1
+        matriz_confusao[pos_maior][pos_valor_correto] += 1
+        print(matriz_confusao)
     except Exception as e:
         print("Problema na função verifica resultado ", e)
     return matriz_confusao
@@ -176,12 +178,11 @@ def append_conexoes(camada, num):
     peso = 0.0
     for neuronio in camada:
         for j in range(num):
-            peso = random.uniform(0.0, 1.0)
+            peso = np.random.uniform(0.0, 1.0)
             if (peso == 0.0): # no pode ser exatamente 0
                 peso = 0.1
             elif (peso == 1.0): # nem exatamente 1
                 peso = 0.90
-            print(peso)
             neuronio.conexoes.append(Conexao(peso))
 
 
@@ -251,11 +252,10 @@ def main():
             list_linha = linha.replace(" ", "").replace("\n", "").split(",")
             entradas(list_linha, camada1, camada3, teste=True)
 
-            # calcula_saida(camada1,camada2)
-            # calcula_saida(camada2,camada3)
+            
+            calcula_saida(camada1,camada2)
 
-
-
+            calcula_saida(camada2,camada3)
             verifica_resultado(camada3, matriz_confusao)
 
             linha = file_tes.readline()
