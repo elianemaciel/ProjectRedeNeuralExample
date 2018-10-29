@@ -20,7 +20,7 @@ class Neuronio():
 
         return conexoes[i]
 
-    def somaValor(self, valor):
+    def soma_valor(self, valor):
 
         self.valor += valor
 
@@ -39,10 +39,6 @@ class Neuronio():
 
     def set_erro(self, erro):
         self.erro = erro
-
-    def update_pesos(self, pos=0, momentum=1.0, taxa_aprendizagem=0.8, erro=0):
-        peso = self.conexoes[pos].peso * momentum + taxa_aprendizagem * self.valor * erro
-        return peso
 
     def print_conexoes(self):
         for conexao in self.conexoes:

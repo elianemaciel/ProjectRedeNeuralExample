@@ -7,7 +7,7 @@ from math import exp, expm1
 import random
 import numpy as np
 
-TAXA_APRENDIZAGEM = 0.1
+TAXA_APRENDIZAGEM = 0.9
 momentum = 1.0
 
 def funcao_rigida(somatorio):
@@ -17,7 +17,8 @@ def funcao_rigida(somatorio):
         return 1
 
 def funcao_sigmoidal(somatorio):
-    valor = 1.0/(1.0+np.exp(-somatorio))
+    valor = 1.0  / (1.0 + exp(-somatorio))
+    print(valor)
     return valor
 
 
@@ -43,39 +44,37 @@ def calcula_erro(camada_intermediaria=None, camada_final=None, ultima_camada=Fal
     try:
         if ultima_camada:
             for neuronio in camada_final:
-                fatorErro = neuronio.valor_esperado - neuronio.valor
-                erro = neuronio.valor * (1 - neuronio.valor) * fatorErro
+                fator_erro = neuronio.valor_esperado - neuronio.valor
+                erro = neuronio.valor * (1 - neuronio.valor) * fator_erro
                 neuronio.set_erro(erro)
         else:
-
             for neuronio in camada_intermediaria:
-                i = 0
-                fatorErro = 0
-                for neuronio_final in camada_final:
-                    fatorErro += neuronio_final.erro * neuronio.conexoes[i].peso
-                    i += 1
-                erro = neuronio.valor * (1 - neuronio.valor) * fatorErro
+                fator_erro = 0.00
+                for i, neuronio_final in enumerate(camada_final):
+                    fator_erro += neuronio_final.erro * neuronio.conexoes[i].peso
+                erro = neuronio.valor * (1.0 - neuronio.valor) * fator_erro
                 neuronio.set_erro(erro)
     except Exception as e:
         print("Erro no calculo de erro ", e)
 
 
+def update_pesos(neuronio, pos=0, taxa_aprendizagem=0.8, erro=0):
+    peso = neuronio.conexoes[pos].peso + taxa_aprendizagem * neuronio.valor * erro
+    return peso
 
 def ajuste_peso(camada_esquerda, camada_direita):
     # import ipdb; ipdb.set_trace()
     try:
-        i = 0
-        for neuronio in camada_direita:
+        for i, neuronio in enumerate(camada_direita):
             for neuronio_dois in camada_esquerda:
-                peso = neuronio_dois.update_pesos(
+                peso = update_pesos(
+                    neuronio_dois,
                     pos=i,
-                    momentum=momentum,
                     taxa_aprendizagem=TAXA_APRENDIZAGEM,
                     erro=neuronio.erro
                 )
                 neuronio_dois.conexoes[i].set_peso(peso)
 
-            i += 1
     except Exception as e:
         print("Erro na função de ajuste de peso", e)
 
@@ -94,7 +93,7 @@ def verifica_resultado(camada_final, matriz_confusao):
                 pos_valor_correto = i
 
         matriz_confusao[pos_maior][pos_valor_correto] += 1
-        print(matriz_confusao)
+        # print(matriz_confusao)
     except Exception as e:
         print("Problema na função verifica resultado ", e)
     return matriz_confusao
@@ -107,7 +106,7 @@ def entradas(linha, camada_inicial, camada_final, teste=False):
             if i == len(linha)-1:
                 break
 
-            camada_inicial[i].set_valor(float(value)/100)
+            camada_inicial[i].set_valor(float(value))
 
         for neuronio in camada_final:
             neuronio.set_valor_esperado(0)
@@ -158,8 +157,8 @@ def calculo_metricas(matriz_confusao):
         print("Sensitividade: ", sensitividade)
         print("Especificidade: ", especificidade)
         print("\n")
-    except:
-        print("Problema ao calcular métricas da rede")
+    except Exception as e:
+        print("Problema ao calcular métricas da rede ", e)
 
 
 def mostra_tabela(matriz_confusao):
@@ -178,12 +177,25 @@ def append_conexoes(camada, num):
     peso = 0.0
     for neuronio in camada:
         for j in range(num):
-            peso = np.random.uniform(0.0, 1.0)
+            peso = round(random.uniform(0.0, 1.0), 3)
             if (peso == 0.0): # no pode ser exatamente 0
                 peso = 0.1
             elif (peso == 1.0): # nem exatamente 1
                 peso = 0.90
             neuronio.conexoes.append(Conexao(peso))
+
+def treinamento(camada1, camada2, camada3):
+    # Passo 2 – Saída da rede
+    calcula_saida(camada1,camada2)
+    calcula_saida(camada2,camada3)
+
+    # # Passo 3 – Cálculo do Erro
+    calcula_erro(camada_final=camada3, ultima_camada=True)
+    calcula_erro(camada_intermediaria=camada2, camada_final=camada3)
+
+    # # Passo 4 – Ajuste dos Pesos
+    ajuste_peso(camada2,camada3)
+    ajuste_peso(camada1,camada2)
 
 
 def main():
@@ -225,7 +237,7 @@ def main():
 
             # Passo 2 – Saída da rede
             calcula_saida(camada1,camada2)
-            # calcula_saida(camada2,camada3)
+            calcula_saida(camada2,camada3)
 
             # # Passo 3 – Cálculo do Erro
             calcula_erro(camada_final=camada3, ultima_camada=True)
@@ -238,6 +250,8 @@ def main():
             linha = file_tra.readline()
             cont += 1
         file_tra.close()
+        for i in range(1000):
+            treinamento(camada1, camada2, camada3)
 
     except Exception as e:
         print('erro ao ler arquivo', e)
@@ -252,7 +266,7 @@ def main():
             list_linha = linha.replace(" ", "").replace("\n", "").split(",")
             entradas(list_linha, camada1, camada3, teste=True)
 
-            
+
             calcula_saida(camada1,camada2)
 
             calcula_saida(camada2,camada3)
@@ -267,7 +281,7 @@ def main():
 
 
     mostra_tabela(matriz_confusao)
-    # calculo_metricas(matriz_confusao)
+    calculo_metricas(matriz_confusao)
 
 
 main()
